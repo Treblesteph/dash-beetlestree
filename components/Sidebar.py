@@ -47,6 +47,7 @@ def callbacks_sidebar(app, tree_data):
         return navbar
     
     @callback(
+        Output("burger-tooltip", "opened"),
         Output("pics", "children"),
         Input('d3tree', 'activeNode'),
         prevent_initial_call=True,
@@ -56,9 +57,7 @@ def callbacks_sidebar(app, tree_data):
 
             # species_imgs = get_naturespot_imgs(activeNode)
             fam_desc, species_imgs = get_wiki_pics(activeNode)
-
             common_names = find_family_node(tree_data, activeNode).get("commonnames", [])
-            
             description_card = create_description_card(activeNode, fam_desc, common_names)
 
             pics = [
@@ -96,5 +95,5 @@ def callbacks_sidebar(app, tree_data):
             ]
 
             pics.insert(0, description_card)
-            return pics
+            return True, pics
         return no_update

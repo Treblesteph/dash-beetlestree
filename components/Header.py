@@ -5,11 +5,13 @@ def create_header(logo):
         dmc.Group(
             [
                 dmc.Tooltip(
+                    id="burger-tooltip",
                     label="Click to see images!",
                     position="bottom",
                     color="orange.6",
                     withArrow=True,
-                    opened=True,
+                    opened=False,
+                    hiddenFrom="sm",
                     children=dmc.Burger(id="burger", size="sm", hiddenFrom="sm", opened=False),
                 ),
                 dmc.Image(src=logo, style={"height": "40px", "width": "auto"}),
