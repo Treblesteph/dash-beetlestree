@@ -1,0 +1,8 @@
+bs4
+dash
+dash-iconify
+dash-mantine-components
+gunicorn
+plotly
+sparqlwrapper
+dash_tree-0.0.1.tar.gz
