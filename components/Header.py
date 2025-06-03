@@ -6,7 +6,11 @@ def create_header(logo):
             [
                 dmc.Burger(id="burger", size="sm", hiddenFrom="sm", opened=False),
                 dmc.Image(src=logo, style={"height": "40px", "width": "auto"}),
-                dmc.Title("Beetles Tree of Life", c="teal.9"),
+                dmc.Title(
+                    "Beetles Tree of Life",
+                    c="teal.9",
+                    size={"base": "lg", "sm": "xl", "md": "xl", "lg": "2xl"},
+                )
             ],
             h="100%",
             px="md",
