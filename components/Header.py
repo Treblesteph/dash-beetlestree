@@ -5,7 +5,7 @@ def create_header(logo):
         dmc.Group(
             [
                 dmc.Burger(id="burger", size="sm", hiddenFrom="sm", opened=False),
-                dmc.Image(src=logo, h=40),
+                dmc.Image(src=logo, height=40, width="auto"),
                 dmc.Title("Beetles Tree of Life", c="teal.9"),
             ],
             h="100%",
