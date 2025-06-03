@@ -6,7 +6,7 @@ def create_header(logo):
             [
                 dmc.Tooltip(
                     label="Click to see images!",
-                    position="right",
+                    position="bottom",
                     color="orange.6",
                     withArrow=True,
                     opened=True,
