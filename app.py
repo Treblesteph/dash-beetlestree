@@ -41,7 +41,7 @@ layout = dmc.AppShell(
         "breakpoint": "sm",
         "collapsed": {"mobile": True},
     },
-    id="appshell",
+    id="appshell"
 )
 
 app.layout = dmc.MantineProvider(layout)

@@ -49,7 +49,8 @@ def create_buttons():
             ],
             gap="xs"
         ),
-        position={"top": 80, "right": 20}
+        position={"top": 80, "right": 20},
+        visibleFrom="sm"
     )
 
     return buttons

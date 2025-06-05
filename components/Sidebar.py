@@ -1,5 +1,5 @@
 import dash_mantine_components as dmc
-from dash import callback, Output, Input, State, no_update
+from dash import callback, dcc, Output, Input, State, no_update, ctx, ClientsideFunction
 
 from components.DescriptionCard import create_description_card
 from scripts.find_node_by_family import find_family_node
@@ -12,6 +12,7 @@ def create_sidebar():
         id="navbar",
         p="md",
         children=[
+            dcc.Store(id="dummy-output"),
             dmc.Flex(
                 direction="column",
                 style={"height": "100%"},
@@ -23,10 +24,17 @@ def create_sidebar():
                             "paddingRight": "0.5rem"
                         },
                         children=[
-                            dmc.Stack(
-                                id='pics',
-                                gap="md",
-                                children=["Explore the tree and click on a family (ending in 'dae') to see images"]
+                            dcc.Loading(
+                                id="loading-pics",
+                                type="cube",
+                                style={"position": "sticky", "top": 0, "zIndex": 10},
+                                children=[
+                                    dmc.Stack(
+                                        id='pics',
+                                        gap="md",
+                                        children=["Explore the tree and click on a family (ending in 'dae') to see images"]
+                                    )
+                                ]
                             )
                         ]
                     )
@@ -39,23 +47,26 @@ def create_sidebar():
 def callbacks_sidebar(app, tree_data):
     @callback(
         Output("appshell", "navbar"),
-        Input("burger", "opened"),
-        State("appshell", "navbar"),
-    )
-    def navbar_is_open(opened, navbar):
-        navbar["collapsed"] = {"mobile": not opened}
-        return navbar
-    
-    @callback(
         Output("burger-tooltip", "opened"),
         Output("pics", "children"),
+        Input("burger", "opened"),
         Input('d3tree', 'activeNode'),
+        State("appshell", "navbar"),
         prevent_initial_call=True,
     )
-    def display_output(activeNode):
-        if activeNode.endswith("dae"):
+    def handle_sidebar_and_tooltip(burger_opened, activeNode, navbar):
+        trigger_id = ctx.triggered_id
+        
+        new_navbar = no_update
+        tooltip_open = no_update
+        pics = no_update
 
-            # species_imgs = get_naturespot_imgs(activeNode)
+        if trigger_id == "burger":
+            new_navbar = navbar
+            new_navbar["collapsed"] = {"mobile": not burger_opened}
+            tooltip_open = False
+
+        if trigger_id == "d3tree" and activeNode and activeNode.endswith("dae"):
             fam_desc, species_imgs = get_wiki_pics(activeNode)
             common_names = find_family_node(tree_data, activeNode).get("commonnames", [])
             description_card = create_description_card(activeNode, fam_desc, common_names)
@@ -95,5 +106,12 @@ def callbacks_sidebar(app, tree_data):
             ]
 
             pics.insert(0, description_card)
-            return True, pics
-        return no_update
+            tooltip_open = True
+
+        return new_navbar, tooltip_open, pics
+
+    app.clientside_callback(
+        ClientsideFunction(namespace="clientside", function_name="scrollToTop"),
+        Output("dummy-output", "data"),
+        Input("d3tree", "activeNode")
+    )
