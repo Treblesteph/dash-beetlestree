@@ -9,6 +9,8 @@ from components.Sidebar import create_sidebar, callbacks_sidebar
 from components.Buttons import create_buttons, callbacks_buttons
 from components.DescriptionCard import callbacks_description_card
 
+from scripts.cache_wiki_pics_all import preload_all_images
+
 app = Dash(__name__, suppress_callback_exceptions=True)
 server = app.server
 
@@ -53,4 +55,5 @@ callbacks_description_card(app)
 
 
 if __name__ == '__main__':
+    preload_all_images()
     app.run(debug=True)
