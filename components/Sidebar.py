@@ -4,7 +4,7 @@ from dash import callback, dcc, Output, Input, State, no_update, ctx, Clientside
 from components.DescriptionCard import create_description_card
 from components.PictureCard import create_picture_card
 from scripts.find_node_by_family import find_family_node
-from scripts.get_wiki_pics import get_wiki_pics
+from scripts.get_wiki_pics import get_wiki_pics_cached as get_wiki_pics
 
 def create_sidebar():
     sidebar = dmc.AppShellNavbar(
@@ -13,9 +13,9 @@ def create_sidebar():
         id="navbar",
         p="md",
         children=[
-            dcc.Store(id="dummy-output"),
-            dcc.Store(id="all-images-store"),
-            dcc.Store(id="images-to-show", data=10),
+            dcc.Store(id="sidebar-state", data="idle"), # for determining loading state
+            dcc.Store(id="all-images-store"),           # for storing fetched imgs
+            dcc.Store(id="images-to-show", data=10),    # for determinding how many loaded
             dmc.Flex(
                 direction="column",
                 style={"height": "100%"},
@@ -27,26 +27,18 @@ def create_sidebar():
                             "paddingRight": "0.5rem"
                         },
                         children=[
-                            dcc.Loading(
-                                id="loading-pics",
-                                type="cube",
-                                style={"position": "sticky", "top": 0, "zIndex": 10},
-                                children=[
-                                    dmc.Stack(
-                                        id='pics',
-                                        gap="md",
-                                        children=["Explore the tree and click on a family (ending in 'dae') to see images"]
-                                    ),
-                                    dmc.Center(
-                                        dmc.Button(
-                                            "Load more images...",
-                                            id="more-imgs-btn",
-                                            variant="subtle",
-                                            color="teal.9",
-                                            mt="md"
-                                        )
-                                    )
-                                ]
+                            dmc.Stack(
+                                id='pics',
+                                gap="md",
+                            ),
+                            dmc.Center(
+                                dmc.Button(
+                                    "Load more images...",
+                                    id="more-imgs-btn",
+                                    variant="subtle",
+                                    color="teal.9",
+                                    mt="md"
+                                )
                             )
                         ]
                     )
@@ -57,11 +49,22 @@ def create_sidebar():
     return sidebar
 
 def callbacks_sidebar(app, tree_data):
+    # @callback(
+    #     Output("sidebar-state", "data"),
+    #     Input("d3tree", "activeNode"),
+    #     prevent_initial_call=True
+    # )
+    # def start_loading(node):
+    #     sb_state = no_update
+    #     if node and node.endswith("dae"): sb_state = "loading"
+    #     return sb_state
+
     @callback(
         Output("appshell", "navbar"),
         Output("burger-tooltip", "opened"),
         Output("all-images-store", "data"),
         Output("images-to-show", "data"),
+        Output("sidebar-state", "data"),
         Input("burger", "opened"),
         Input("d3tree", "activeNode"),
         Input("more-imgs-btn", "n_clicks"),
@@ -99,38 +102,61 @@ def callbacks_sidebar(app, tree_data):
 
             new_all_images = {
                 "description_card": description_card,
-                "images": images
+                "images": images,
+                "family": activeNode,
+                "has_more": len(images) > 10
             }
             new_num_shown = 10
+            tooltip_open = True
 
         # If 'show more images' button was pressed then show more (up to the total)
         if trigger_id == "more-imgs-btn" and all_images:
-            total = len(all_images["images"])
-            if num_shown < total: new_num_shown = min(num_shown + 10, total)
-
-        return new_navbar, tooltip_open, new_all_images, new_num_shown
+            all_images_copy = all_images.copy()
+            total_available = len(all_images_copy["images"])
+            next_count = min(total_available, num_shown + 10)
+            
+            new_num_shown = next_count
+            all_images_copy["has_mode"] = next_count < total_available
+            new_all_images = all_images_copy
+            
+        return new_navbar, tooltip_open, new_all_images, new_num_shown, "ready"
     
     @callback(
         Output("pics", "children"),
+        Input("sidebar-state", "data"),
         Input("all-images-store", "data"),
         Input("images-to-show", "data"),
-        prevent_initial_call=True
     )
-    def render_images(data, count):
-        if not data: return no_update
-        desc_card = data["description_card"]
-        imgs = [create_picture_card(img) for img in data["images"][:count]]
-        return [desc_card] + imgs
+    def update_sidebar_content(state, data, count):
+        sb_content = no_update
+        
+        if state == "idle" or not state:
+            sb_content = ["Explore the tree and click on a family (ending in 'dae') to see images"]
+
+        if state == "loading":
+            sb_content = [
+                dmc.LoadingOverlay(
+                    visible=True,
+                    children=dmc.Center(dmc.Text("Loading images...")),
+                    loaderProps={"variant": "dots", "color": "teal", "size": "lg"}
+                )
+            ]
+        
+        if state == "ready" and data:
+            desc_card = data["description_card"]
+            imgs = [create_picture_card(img) for img in data["images"][:count]]
+            sb_content = [desc_card] + imgs
+    
+        return sb_content
     
     @callback(
         Output("more-imgs-btn", "style"),
         Input("all-images-store", "data"),
-        Input("images-to-show", "data"),
     )
-    def toggle_btn(data, shown):
+    def toggle_btn(data):
 
         if not data: return {"display": "none"}
-        if shown >= len(data["images"]): return {"display": "none"}
+        if not data.get("has_more", True): return {"display": "none"}        
         
         return {"display": "block"}
 
