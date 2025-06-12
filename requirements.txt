@@ -4,5 +4,6 @@ dash-iconify
 dash-mantine-components
 gunicorn
 plotly
+redis
 sparqlwrapper
 dash_tree-0.0.1.tar.gz
